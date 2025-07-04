@@ -7,15 +7,20 @@ const path = require("path");
 const app = express();
 const port = 3000;
 
-// app.use(cors());
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL,
-    
-    methods: ["GET", "POST", "PUT", "DELETE"],
+app.use(cors());
+// app.use(
+//   cors({
+//     origin: process.env.FRONTEND_URL,
+//     credentials: true,
+//     methods: ["GET", "POST", "PUT", "DELETE"],
    
-  })
-);
+//   })
+// );
+app.use(cors({
+  origin: "http://localhost:5173",  // your React frontend
+  credentials: true                 // optional, for cookies
+}));
+
 
 // settting up the file storage
 const storage = multer.diskStorage({
