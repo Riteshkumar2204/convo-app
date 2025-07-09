@@ -344,6 +344,52 @@ test('small caps runs can be configured with style mapping', function() {
 });
 
 
+test('highlighted runs are ignored by default', function() {
+    var run = runOfText("Hello.", {highlight: "yellow"});
+    var converter = new DocumentConverter();
+    return converter.convertToHtml(run).then(function(result) {
+        assert.equal(result.value, "Hello.");
+    });
+});
+
+test('highlighted runs can be configured with style mapping for all highlights', function() {
+    var run = runOfText("Hello.", {highlight: "yellow"});
+    var converter = new DocumentConverter({
+        styleMap: [
+            {
+                from: documentMatchers.highlight(null),
+                to: htmlPaths.elements([htmlPaths.element("mark")])
+            }
+        ]
+    });
+    return converter.convertToHtml(run).then(function(result) {
+        assert.equal(result.value, "<mark>Hello.</mark>");
+    });
+});
+
+test('highlighted runs can be configured with style mapping for specific highlight color', function() {
+    var paragraph = new documents.Paragraph([
+        runOfText("Yellow", {highlight: "yellow"}),
+        runOfText("Red", {highlight: "red"})
+    ]);
+    var converter = new DocumentConverter({
+        styleMap: [
+            {
+                from: documentMatchers.highlight({color: "yellow"}),
+                to: htmlPaths.elements([htmlPaths.element("mark", {"class": "yellow"})])
+            },
+            {
+                from: documentMatchers.highlight({color: undefined}),
+                to: htmlPaths.elements([htmlPaths.element("mark")])
+            }
+        ]
+    });
+    return converter.convertToHtml(paragraph).then(function(result) {
+        assert.equal(result.value, '<p><mark class="yellow">Yellow</mark><mark>Red</mark></p>');
+    });
+});
+
+
 test('run styles are converted to HTML if mapping exists', function() {
     var run = runOfText("Hello.", {styleId: "Heading1Char", styleName: "Heading 1 Char"});
     var converter = new DocumentConverter({
@@ -416,6 +462,22 @@ test('hyperlink target frame is used as anchor target', function() {
     var converter = new DocumentConverter();
     return converter.convertToHtml(hyperlink).then(function(result) {
         assert.equal(result.value, '<a href="#start" target="_blank">Hello.</a>');
+    });
+});
+
+test('unchecked checkbox is converted to unchecked checkbox input', function() {
+    var checkbox = documents.checkbox({checked: false});
+    var converter = new DocumentConverter();
+    return converter.convertToHtml(checkbox).then(function(result) {
+        assert.equal(result.value, '<input type="checkbox" />');
+    });
+});
+
+test('checked checkbox is converted to checked checkbox input', function() {
+    var checkbox = documents.checkbox({checked: true});
+    var converter = new DocumentConverter();
+    return converter.convertToHtml(checkbox).then(function(result) {
+        assert.equal(result.value, '<input type="checkbox" checked="checked" />');
     });
 });
 
@@ -609,12 +671,18 @@ test('breaks can be mapped using style mappings', function() {
             {
                 from: documentMatchers.pageBreak,
                 to: htmlPaths.topLevelElement("hr")
+            },
+            {
+                from: documentMatchers.lineBreak,
+                to: htmlPaths.topLevelElement("br", {class: "line-break"})
             }
         ]
     });
 
-    return converter.convertToHtml(documents.pageBreak).then(function(result) {
-        assert.equal(result.value, "<hr />");
+    var run = documents.run([documents.pageBreak, documents.lineBreak]);
+
+    return converter.convertToHtml(run).then(function(result) {
+        assert.equal(result.value, '<hr /><br class="line-break" />');
     });
 });
 
