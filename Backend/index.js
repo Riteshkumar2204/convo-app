@@ -1,11 +1,17 @@
+// import dotenv from "dotenv";
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
 const docxToPDF = require("docx-pdf");
 const path = require("path");
+const dotenv = require("dotenv");
+dotenv.config();
+
+
 
 const app = express();
-const port = 3000;
+// const port = 3000;
+const port = process.env.PORT;
 
 // app.use(cors());
 // app.use(
@@ -17,8 +23,9 @@ const port = 3000;
 //   })
 // );
 app.use(cors({
-  origin: "http://localhost:5173",  // your React frontend
-  credentials: true                 // optional, for cookies
+//   origin: "http://localhost:5173",  // your React frontend
+ origin:process.env.FRONTEND_URL,  
+credentials: true                 // optional, for cookies
 }));
 
 
