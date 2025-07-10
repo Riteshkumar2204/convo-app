@@ -82,62 +82,60 @@
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
-
-const docxToPDF = require("docx-pdf");
 const path = require("path");
 const dotenv = require("dotenv");
 const fs = require("fs");
 
-
-// Load env vars
+// Load environment variables
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ✅ CORS setup
+// ✅ CORS configuration
 app.use(cors({
   origin: process.env.FRONTEND_URL,
   credentials: true,
 }));
 
-// ✅ Ensure directories exist
-["uploads", "files"].forEach(dir => {
+// ✅ Create upload and output directories if not present
+["uploads", "files"].forEach((dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
   }
 });
 
-// ✅ Multer config
+// ✅ Multer setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "uploads"),
   filename: (req, file, cb) => cb(null, file.originalname),
 });
 const upload = multer({ storage });
 
-// ✅ Route
+// ✅ Test Route (convertFile)
 app.post("/convertFile", upload.single("file"), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const outputPath = path.join(__dirname, "files", `${req.file.originalname}.pdf`);
+    console.log("✅ File uploaded:", req.file.originalname);
 
-    docxToPDF(req.file.path, outputPath, (err) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ message: "Error converting DOCX to PDF" });
-      }
-
-      res.download(outputPath, () => {
-        console.log("File downloaded");
-      });
+    // For now, just confirm the file upload — skip conversion
+    return res.status(200).json({
+      message: "File uploaded successfully!",
+      filename: req.file.originalname,
     });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("❌ Upload error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
+});
+
+// ✅ Health check route
+app.get("/ping", (req, res) => {
+  res.send("pong");
 });
 
 // ✅ Start server
