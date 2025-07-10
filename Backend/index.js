@@ -81,7 +81,7 @@
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
-const docxToPDF = require("docx-pdf");
+const { exec } = require("child_process");
 const path = require("path");
 const dotenv = require("dotenv");
 const fs = require("fs");
@@ -91,58 +91,49 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ✅ Enable CORS for frontend
+// ✅ CORS config
 app.use(cors({
-  origin: process.env.FRONTEND_URL,  // e.g., https://convo-app-nu.vercel.app
+  origin: process.env.FRONTEND_URL,
   credentials: true,
 }));
 
-// ✅ Use /tmp (safe for Render)
+// ✅ Directories (in /tmp for Render)
 const uploadDir = "/tmp/uploads";
 const outputDir = "/tmp/files";
 
-// Ensure temp folders exist
 [uploadDir, outputDir].forEach(dir => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-// ✅ Multer config (save in /tmp/uploads)
+// ✅ Multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => cb(null, file.originalname),
 });
 const upload = multer({ storage });
 
-// ✅ POST Route: Convert DOCX to PDF
+// ✅ Conversion endpoint
 app.post("/convertFile", upload.single("file"), (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
+  if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+  const inputPath = path.join(uploadDir, req.file.originalname);
+  const outputPath = path.join(outputDir, `${path.parse(req.file.originalname).name}.pdf`);
+
+  const command = `soffice --headless --convert-to pdf --outdir ${outputDir} ${inputPath}`;
+
+  exec(command, (err, stdout, stderr) => {
+    if (err) {
+      console.error("❌ Conversion failed:", stderr);
+      return res.status(500).json({ message: "Conversion failed" });
     }
 
-    const inputPath = req.file.path;
-    const outputPath = path.join(outputDir, `${req.file.originalname}.pdf`);
-
-    console.log("📂 Input:", inputPath);
-    console.log("📄 Output:", outputPath);
-
-    docxToPDF(inputPath, outputPath, (err) => {
-      if (err) {
-        console.error("❌ Conversion error:", err);
-        return res.status(500).json({ message: "Failed to convert DOCX to PDF" });
-      }
-
-      res.download(outputPath, () => {
-        console.log("✅ File downloaded successfully");
-      });
+    res.download(outputPath, () => {
+      console.log("✅ File sent:", outputPath);
     });
-  } catch (error) {
-    console.error("🔥 Server error:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
+  });
 });
 
 // ✅ Start server
 app.listen(port, () => {
-  console.log(`🚀 Server running on port ${port}`);
+  console.log(`🚀 Server running at http://localhost:${port}`);
 });
