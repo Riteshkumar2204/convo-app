@@ -13,10 +13,10 @@
         "cors": "^2.8.5",
         "docx-pdf": "^0.0.1",
         "dotenv": "^17.2.0",
-        "express": "^4.19.2",
+        "express": "^4.21.2",
+        "mammoth": "^1.9.1",
         "multer": "^1.4.5-lts.1",
         "nodemon": "^3.1.0",
-        "phantomjs-prebuilt": "^2.1.16",
-        "puppeteer": "^24.11.2"
+        "puppeteer": "^24.12.1"
     }
 }
