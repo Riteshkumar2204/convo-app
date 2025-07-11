@@ -23,9 +23,13 @@ function Home() {
         
         //  "http://localhost:3000/convertFile",
         "https://convo-app-zv10.onrender.com/convertFile",
+           
         
         formData,
         {
+            withCredentials: true,
+          
+        
           responseType: "blob",
         }
       );
